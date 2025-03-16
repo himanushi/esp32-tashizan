@@ -5,11 +5,12 @@ int num1, num2;           // 足し算の問題用の数値
 int answer;               // 正解
 bool showingQuestion = true;  // true: 問題表示中, false: 回答表示中
 unsigned long lastButtonPress = 0;  // チャタリング防止用
+int maxNumber = 10;       // 乱数の最大値（初期値10）
 
 // 新しい問題を生成
 void generateNewQuestion() {
-  num1 = random(1, 10);
-  num2 = random(1, 10);
+  num1 = random(1, maxNumber);  // 1からmaxNumber-1までの乱数
+  num2 = random(1, maxNumber);
   answer = num1 + num2;
 }
 
@@ -47,7 +48,23 @@ void setup() {
 void loop() {
   M5.update();  // ボタンの状態を更新
 
-  // ボタンAが押されたとき（チャタリング防止付き）
+  // 上ボタン（左側）が押されたときに最大値を増やす
+  if (M5.BtnB.wasPressed()) {
+    maxNumber++;
+    if (maxNumber > 100) maxNumber = 100;  // 最大値は100まで
+    generateNewQuestion();
+    displayQuestion();
+  }
+
+  // 下ボタン（右側）が押されたときに最大値を減らす
+  if (M5.BtnPWR.wasPressed()) {
+    maxNumber--;
+    if (maxNumber < 2) maxNumber = 2;  // 最小値は2（1以上の乱数を生成するため）
+    generateNewQuestion();
+    displayQuestion();
+  }
+
+  // 中央ボタンが短く押されたときに答えの表示/非表示を切り替え
   if (M5.BtnA.wasPressed()) {
     unsigned long currentTime = millis();
     if (currentTime - lastButtonPress > 300) {  // 300ms以上間隔が空いているか確認
