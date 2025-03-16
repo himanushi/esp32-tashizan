@@ -1,6 +1,8 @@
 #include <M5Unified.h>
+#include <Preferences.h>
 
 // グローバル変数
+Preferences preferences;  // NVS操作用のオブジェクト
 int num1, num2;           // 足し算の問題用の数値
 int answer;               // 正解
 bool showingQuestion = true;  // true: 問題表示中, false: 回答表示中
@@ -41,6 +43,10 @@ void setup() {
   M5.Display.fillScreen(BLACK);
   M5.Display.setTextColor(WHITE);
   
+  // NVSを初期化してmaxNumberを読み込む
+  preferences.begin("tashizan", false);  // falseは読み書きモード
+  maxNumber = preferences.getInt("maxNum", 10);  // 保存値がない場合は10
+  
   // 乱数初期化
   randomSeed(analogRead(0));
   
@@ -56,6 +62,7 @@ void loop() {
   if (M5.BtnB.wasPressed()) {
     maxNumber++;
     if (maxNumber > 100) maxNumber = 100;  // 最大値は100まで
+    preferences.putInt("maxNum", maxNumber);  // 値を保存
     generateNewQuestion();
     displayQuestion();
   }
@@ -64,6 +71,7 @@ void loop() {
   if (M5.BtnPWR.wasPressed()) {
     maxNumber--;
     if (maxNumber < 2) maxNumber = 2;  // 最小値は2（1以上の乱数を生成するため）
+    preferences.putInt("maxNum", maxNumber);  // 値を保存
     generateNewQuestion();
     displayQuestion();
   }
