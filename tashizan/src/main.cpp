@@ -17,17 +17,21 @@ void generateNewQuestion() {
 // 問題を表示
 void displayQuestion() {
   M5.Display.fillScreen(BLACK);
-  M5.Display.setCursor(10, 20);
-  M5.Display.setTextSize(3);
-  M5.Display.printf("%d + %d = ?", num1, num2);
+  M5.Display.setCursor(20, 20);
+  M5.Display.setTextSize(4);
+  M5.Display.printf("%d + %d", num1, num2);
+  M5.Display.setCursor(20, 60);
+  M5.Display.printf("= ?");
 }
 
 // 答えを表示
 void displayAnswer() {
   M5.Display.fillScreen(BLACK);
-  M5.Display.setCursor(10, 20);
-  M5.Display.setTextSize(3);
-  M5.Display.printf("%d + %d = %d", num1, num2, answer);
+  M5.Display.setCursor(20, 20);
+  M5.Display.setTextSize(4);
+  M5.Display.printf("%d + %d", num1, num2, answer);
+  M5.Display.setCursor(20, 60);
+  M5.Display.printf("= %d", answer);
 }
 
 void setup() {
