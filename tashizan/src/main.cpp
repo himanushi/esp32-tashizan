@@ -1,12 +1,16 @@
 #include <M5Unified.h>
 #include <Preferences.h>
 
+// 定数
+const unsigned long TIMEOUT_DURATION = 3 * 60 * 1000;  // 3分
+
 // グローバル変数
 Preferences preferences;  // NVS操作用のオブジェクト
 int num1, num2;           // 足し算の問題用の数値
 int answer;               // 正解
 bool showingQuestion = true;  // true: 問題表示中, false: 回答表示中
 unsigned long lastButtonPress = 0;  // チャタリング防止用
+unsigned long lastActivityTime = 0;  // 最後の操作時間
 int maxNumber = 10;       // 乱数の最大値（初期値10）
 
 // 新しい問題を生成
@@ -62,10 +66,23 @@ void setup() {
   // 最初の問題を生成
   generateNewQuestion();
   displayQuestion();
+  
+  // 最終活動時間を初期化
+  lastActivityTime = millis();
 }
 
 void loop() {
   M5.update();  // ボタンの状態を更新
+
+  // いずれかのボタンが押された場合
+  if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed() || M5.BtnPWR.wasPressed()) {
+    lastActivityTime = millis();  // 最終活動時間を更新
+  }
+
+  // タイムアウトチェック - 3分経過で電源オフ
+  if (millis() - lastActivityTime > TIMEOUT_DURATION) {
+    M5.Power.powerOff();  // 完全に電源オフ
+  }
 
   // 上ボタン（左側）が押されたときに最大値を増やす
   if (M5.BtnB.wasPressed()) {
