@@ -16,6 +16,13 @@ void generateNewQuestion() {
   answer = num1 + num2;
 }
 
+// バッテリー残量を表示
+void displayBatteryLevel() {
+  M5.Display.setTextSize(2);
+  M5.Display.setCursor(230, 100);
+  M5.Display.printf("%d%%", M5.Power.getBatteryLevel());
+}
+
 // 問題を表示
 void displayQuestion() {
   M5.Display.fillScreen(BLACK);
@@ -24,6 +31,7 @@ void displayQuestion() {
   M5.Display.printf("%d + %d", num1, num2);
   M5.Display.setCursor(20, 60);
   M5.Display.printf("= ?");
+  displayBatteryLevel();
 }
 
 // 答えを表示
@@ -34,6 +42,7 @@ void displayAnswer() {
   M5.Display.printf("%d + %d", num1, num2, answer);
   M5.Display.setCursor(20, 60);
   M5.Display.printf("= %d", answer);
+  displayBatteryLevel();
 }
 
 void setup() {
