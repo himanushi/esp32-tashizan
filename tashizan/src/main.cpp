@@ -2,7 +2,7 @@
 #include <Preferences.h>
 
 // 定数
-const unsigned long TIMEOUT_DURATION = 3 * 60 * 1000;  // 3分
+const unsigned long TIMEOUT_DURATION = 1 * 60 * 1000;  // 3分
 
 // グローバル変数
 Preferences preferences;  // NVS操作用のオブジェクト
@@ -20,11 +20,13 @@ void generateNewQuestion() {
   answer = num1 + num2;
 }
 
-// バッテリー残量を表示
+// バッテリー残量とmaxNumberを表示
 void displayBatteryLevel() {
-  M5.Display.setTextSize(2);
-  M5.Display.setCursor(230, 100);
+  M5.Display.setTextSize(1);
+  M5.Display.setCursor(20, 110);
   M5.Display.printf("%d%%", M5.Power.getBatteryLevel());
+  M5.Display.setCursor(100, 110);
+  M5.Display.printf("max: %d", maxNumber);
 }
 
 // 問題を表示
