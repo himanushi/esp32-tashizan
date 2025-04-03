@@ -2,7 +2,7 @@
 #include <Preferences.h>
 
 // 定数
-const unsigned long TIMEOUT_DURATION = 1 * 60 * 1000;  // 3分
+const unsigned long TIMEOUT_DURATION = 5 * 60 * 1000;  // 5分
 
 // グローバル変数
 Preferences preferences;  // NVS操作用のオブジェクト
