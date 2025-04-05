@@ -196,15 +196,17 @@ void loop() {
   // 決定ボタンの短押しで答えの表示/非表示を切り替え
   if (M5.BtnA.wasPressed()) {
     unsigned long currentTime = millis();
-    if (showingQuestion) {
-      // 問題表示中なら答えを表示
-      displayAnswer();
-    } else {
-      // 答え表示中なら新しい問題を生成して表示
-      generateNewQuestion();
-      displayQuestion();
+    if (currentTime - lastButtonPress > 100) {  // 100ms以上間隔が空いているか確認
+      if (showingQuestion) {
+        // 問題表示中なら答えを表示
+        displayAnswer();
+      } else {
+        // 答え表示中なら新しい問題を生成して表示
+        generateNewQuestion();
+        displayQuestion();
+      }
+      showingQuestion = !showingQuestion;  // 表示状態を切り替え
+      lastButtonPress = currentTime;
     }
-    showingQuestion = !showingQuestion;  // 表示状態を切り替え
-    lastButtonPress = currentTime;
   }
 }
