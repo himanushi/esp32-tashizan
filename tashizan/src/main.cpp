@@ -4,20 +4,75 @@
 // 定数
 const unsigned long TIMEOUT_DURATION = 5 * 60 * 1000;  // 5分
 
+// 計算の種類を定義
+enum CalcType {
+  ADD = 0,    // 足し算
+  SUB = 1,    // 引き算
+  MUL = 2,    // 掛け算
+  DIV = 3     // 割り算
+};
+
 // グローバル変数
 Preferences preferences;  // NVS操作用のオブジェクト
-int num1, num2;           // 足し算の問題用の数値
+int num1, num2;           // 計算用の数値
 int answer;               // 正解
 bool showingQuestion = true;  // true: 問題表示中, false: 回答表示中
 unsigned long lastButtonPress = 0;  // チャタリング防止用
 unsigned long lastActivityTime = 0;  // 最後の操作時間
-int maxNumber = 10;       // 乱数の最大値（初期値10）
+CalcType currentCalc = ADD;  // 現在の計算種類
+int maxNumbers[4] = {10, 10, 10, 10};  // 各計算種類ごとの最大値
+
+// 計算記号を取得
+const char* getCalcSymbol() {
+  switch (currentCalc) {
+    case ADD: return "+";
+    case SUB: return "-";
+    case MUL: return "x";
+    case DIV: return "/";
+    default: return "+";
+  }
+}
+
+// 計算種類の名前を取得
+const char* getCalcName() {
+  switch (currentCalc) {
+    case ADD: return "ADD";
+    case SUB: return "SUB";
+    case MUL: return "MUL";
+    case DIV: return "DIV";
+    default: return "ADD";
+  }
+}
 
 // 新しい問題を生成
 void generateNewQuestion() {
-  num1 = random(1, maxNumber);  // 1からmaxNumber-1までの乱数
-  num2 = random(1, maxNumber);
-  answer = num1 + num2;
+  int maxNumber = maxNumbers[currentCalc];
+  
+  switch (currentCalc) {
+    case ADD:
+      num1 = random(1, maxNumber);
+      num2 = random(1, maxNumber);
+      answer = num1 + num2;
+      break;
+      
+    case SUB:
+      num1 = random(1, maxNumber);
+      num2 = random(1, num1);  // num1より小さい数を生成
+      answer = num1 - num2;
+      break;
+      
+    case MUL:
+      num1 = random(1, maxNumber);
+      num2 = random(1, maxNumber);
+      answer = num1 * num2;
+      break;
+      
+    case DIV:
+      num2 = random(1, maxNumber);  // 除数を先に決める
+      answer = random(1, maxNumber);  // 商を決める
+      num1 = num2 * answer;  // 被除数を計算（必ず割り切れる）
+      break;
+  }
 }
 
 // バッテリー残量とmaxNumberを表示
@@ -26,7 +81,7 @@ void displayBatteryLevel() {
   M5.Display.setCursor(20, 110);
   M5.Display.printf("%d%%", M5.Power.getBatteryLevel());
   M5.Display.setCursor(100, 110);
-  M5.Display.printf("max: %d", maxNumber);
+  M5.Display.printf("%s max: %d", getCalcName(), maxNumbers[currentCalc]);
 }
 
 // 問題を表示
@@ -34,7 +89,7 @@ void displayQuestion() {
   M5.Display.fillScreen(BLACK);
   M5.Display.setCursor(20, 20);
   M5.Display.setTextSize(4);
-  M5.Display.printf("%d + %d", num1, num2);
+  M5.Display.printf("%d %s %d", num1, getCalcSymbol(), num2);
   M5.Display.setCursor(20, 60);
   M5.Display.printf("= ?");
   displayBatteryLevel();
@@ -45,7 +100,7 @@ void displayAnswer() {
   M5.Display.fillScreen(BLACK);
   M5.Display.setCursor(20, 20);
   M5.Display.setTextSize(4);
-  M5.Display.printf("%d + %d", num1, num2, answer);
+  M5.Display.printf("%d %s %d", num1, getCalcSymbol(), num2);
   M5.Display.setCursor(20, 60);
   M5.Display.printf("= %d", answer);
   displayBatteryLevel();
@@ -58,9 +113,12 @@ void setup() {
   M5.Display.fillScreen(BLACK);
   M5.Display.setTextColor(WHITE);
   
-  // NVSを初期化してmaxNumberを読み込む
+  // NVSを初期化して各計算種類のmaxNumberを読み込む
   preferences.begin("tashizan", false);  // falseは読み書きモード
-  maxNumber = preferences.getInt("maxNum", 10);  // 保存値がない場合は10
+  maxNumbers[ADD] = preferences.getInt("maxAdd", 10);
+  maxNumbers[SUB] = preferences.getInt("maxSub", 10);
+  maxNumbers[MUL] = preferences.getInt("maxMul", 10);
+  maxNumbers[DIV] = preferences.getInt("maxDiv", 10);
   
   // 乱数初期化
   randomSeed(analogRead(0));
@@ -81,43 +139,72 @@ void loop() {
     lastActivityTime = millis();  // 最終活動時間を更新
   }
 
-  // タイムアウトチェック - 3分経過で電源オフ
+  // タイムアウトチェック - 5分経過で電源オフ
   if (millis() - lastActivityTime > TIMEOUT_DURATION) {
     M5.Power.powerOff();  // 完全に電源オフ
   }
 
-  // 上ボタン（左側）が押されたときに最大値を増やす
-  if (M5.BtnB.wasPressed()) {
-    maxNumber++;
-    if (maxNumber > 100) maxNumber = 100;  // 最大値は100まで
-    preferences.putInt("maxNum", maxNumber);  // 値を保存
-    generateNewQuestion();
-    displayQuestion();
+  // 決定ボタンが押されている状態での上下ボタン操作
+  if (M5.BtnA.isPressed()) {
+    // 上ボタンでレベルを上げる
+    if (M5.BtnB.wasPressed()) {
+      maxNumbers[currentCalc]++;
+      if (maxNumbers[currentCalc] > 100) maxNumbers[currentCalc] = 100;
+      // 計算種類に応じた保存キーで値を保存
+      switch (currentCalc) {
+        case ADD: preferences.putInt("maxAdd", maxNumbers[currentCalc]); break;
+        case SUB: preferences.putInt("maxSub", maxNumbers[currentCalc]); break;
+        case MUL: preferences.putInt("maxMul", maxNumbers[currentCalc]); break;
+        case DIV: preferences.putInt("maxDiv", maxNumbers[currentCalc]); break;
+      }
+      generateNewQuestion();
+      displayQuestion();
+    }
+    
+    // 下ボタンでレベルを下げる
+    if (M5.BtnPWR.wasPressed()) {
+      maxNumbers[currentCalc]--;
+      if (maxNumbers[currentCalc] < 2) maxNumbers[currentCalc] = 2;
+      // 計算種類に応じた保存キーで値を保存
+      switch (currentCalc) {
+        case ADD: preferences.putInt("maxAdd", maxNumbers[currentCalc]); break;
+        case SUB: preferences.putInt("maxSub", maxNumbers[currentCalc]); break;
+        case MUL: preferences.putInt("maxMul", maxNumbers[currentCalc]); break;
+        case DIV: preferences.putInt("maxDiv", maxNumbers[currentCalc]); break;
+      }
+      generateNewQuestion();
+      displayQuestion();
+    }
+  } else {
+    // 決定ボタンが押されていない状態での上下ボタン操作
+    
+    // 上ボタンで計算種類を切り替え（増加）
+    if (M5.BtnB.wasPressed()) {
+      currentCalc = static_cast<CalcType>((currentCalc + 1) % 4);
+      generateNewQuestion();
+      displayQuestion();
+    }
+    
+    // 下ボタンで計算種類を切り替え（減少）
+    if (M5.BtnPWR.wasPressed()) {
+      currentCalc = static_cast<CalcType>((currentCalc + 3) % 4);  // +3は-1と同じ
+      generateNewQuestion();
+      displayQuestion();
+    }
   }
 
-  // 下ボタン（右側）が押されたときに最大値を減らす
-  if (M5.BtnPWR.wasPressed()) {
-    maxNumber--;
-    if (maxNumber < 2) maxNumber = 2;  // 最小値は2（1以上の乱数を生成するため）
-    preferences.putInt("maxNum", maxNumber);  // 値を保存
-    generateNewQuestion();
-    displayQuestion();
-  }
-
-  // 中央ボタンが短く押されたときに答えの表示/非表示を切り替え
+  // 決定ボタンの短押しで答えの表示/非表示を切り替え
   if (M5.BtnA.wasPressed()) {
     unsigned long currentTime = millis();
-    if (currentTime - lastButtonPress > 300) {  // 300ms以上間隔が空いているか確認
-      if (showingQuestion) {
-        // 問題表示中なら答えを表示
-        displayAnswer();
-      } else {
-        // 答え表示中なら新しい問題を生成して表示
-        generateNewQuestion();
-        displayQuestion();
-      }
-      showingQuestion = !showingQuestion;  // 表示状態を切り替え
-      lastButtonPress = currentTime;
+    if (showingQuestion) {
+      // 問題表示中なら答えを表示
+      displayAnswer();
+    } else {
+      // 答え表示中なら新しい問題を生成して表示
+      generateNewQuestion();
+      displayQuestion();
     }
+    showingQuestion = !showingQuestion;  // 表示状態を切り替え
+    lastButtonPress = currentTime;
   }
 }
