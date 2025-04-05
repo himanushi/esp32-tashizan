@@ -144,9 +144,9 @@ void loop() {
     M5.Power.powerOff();  // 完全に電源オフ
   }
 
-  // 決定ボタンが押されている状態での上下ボタン操作
-  if (M5.BtnA.isPressed()) {
-    // 上ボタンでレベルを上げる
+  // 決定ボタン（BtnA）が押されている場合の処理
+  if (M5.BtnA.isHolding()) {
+    // 上ボタン（BtnB）でレベルを上げる
     if (M5.BtnB.wasPressed()) {
       maxNumbers[currentCalc]++;
       if (maxNumbers[currentCalc] > 100) maxNumbers[currentCalc] = 100;
@@ -161,7 +161,7 @@ void loop() {
       displayQuestion();
     }
     
-    // 下ボタンでレベルを下げる
+    // 下ボタン（BtnPWR）でレベルを下げる
     if (M5.BtnPWR.wasPressed()) {
       maxNumbers[currentCalc]--;
       if (maxNumbers[currentCalc] < 2) maxNumbers[currentCalc] = 2;
@@ -178,22 +178,25 @@ void loop() {
   } else {
     // 決定ボタンが押されていない状態での上下ボタン操作
     
-    // 上ボタンで計算種類を切り替え（増加）
+    // 上ボタン（BtnB）で計算種類を切り替え（増加）
     if (M5.BtnB.wasPressed()) {
+      showingQuestion = true;  // 問題表示に戻す
       currentCalc = static_cast<CalcType>((currentCalc + 1) % 4);
       generateNewQuestion();
       displayQuestion();
     }
-    
-    // 下ボタンで計算種類を切り替え（減少）
+
+    // 下ボタン（BtnPWR）で計算種類を切り替え（減少）
     if (M5.BtnPWR.wasPressed()) {
+      showingQuestion = true;  // 問題表示に戻す
       currentCalc = static_cast<CalcType>((currentCalc + 3) % 4);  // +3は-1と同じ
       generateNewQuestion();
       displayQuestion();
     }
   }
 
-  // 決定ボタンの短押しで答えの表示/非表示を切り替え
+  // 決定ボタン（BtnA）の短押しで答えの表示/非表示を切り替え
+  // 他のボタンが押されていない場合のみ処理
   if (M5.BtnA.wasPressed()) {
     unsigned long currentTime = millis();
     if (currentTime - lastButtonPress > 100) {  // 100ms以上間隔が空いているか確認
@@ -205,8 +208,8 @@ void loop() {
         generateNewQuestion();
         displayQuestion();
       }
-      showingQuestion = !showingQuestion;  // 表示状態を切り替え
       lastButtonPress = currentTime;
+      showingQuestion = !showingQuestion;  // 表示状態を切り替え
     }
   }
 }
